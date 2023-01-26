@@ -70,7 +70,7 @@
 #define MICROPY_PY_MACHINE_SPI_LSB (SPI_TRANSFER_LSB)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW mp_pin_make_new
 #define MICROPY_MODULE_WEAK_LINKS   (1)
-#define MICROPY_PY_STRUCT           (0)
+#define MICROPY_PY_STRUCT           (1)
 #ifdef CONFIG_NETWORKING
 // If we have networking, we likely want errno comfort
 #define MICROPY_PY_UERRNO           (1)

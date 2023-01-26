@@ -30,6 +30,8 @@ project(micropython)
 set(MICROPY_PORT_DIR    ${CMAKE_CURRENT_SOURCE_DIR})
 set(MICROPY_DIR         ${MICROPY_PORT_DIR}/../..)
 set(MICROPY_TARGET      micropython)
+set(MICROPY_CROSS_FLAGS -march=armv6m)
+set(MICROPY_FROZEN_MANIFEST ${MICROPY_PORT_DIR}/manifest.py)
 
 include(${MICROPY_DIR}/py/py.cmake)
 include(${MICROPY_DIR}/extmod/extmod.cmake)

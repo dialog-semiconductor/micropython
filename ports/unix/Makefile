@@ -135,9 +135,6 @@ ifeq ($(MICROPY_PY_USSL),1)
 ifeq ($(MICROPY_SSL_AXTLS),1)
 
 endif
-ifeq ($(MICROPY_SSL_MBEDTLS),1)
-CFLAGS += -DMBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
-endif
 endif
 
 # If the variant enables it, enable modbluetooth.
@@ -297,7 +294,7 @@ $(TOP)/lib/libffi/configure: $(TOP)/lib/libffi/autogen.sh
 # docs and depending on makeinfo
 $(BUILD)/lib/libffi/include/ffi.h: $(TOP)/lib/libffi/configure
 	mkdir -p $(BUILD)/lib/libffi; cd $(BUILD)/lib/libffi; \
-	$(abspath $(TOP))/lib/libffi/configure $(CROSS_COMPILE_HOST) --prefix=$$PWD/out --disable-structs CC="$(CC)" CXX="$(CXX)" LD="$(LD)" CFLAGS="-Os -fomit-frame-pointer -fstrict-aliasing -ffast-math -fno-exceptions"; \
+	$(abspath $(TOP))/lib/libffi/configure $(CROSS_COMPILE_HOST) --prefix=$$PWD/out --disable-shared --disable-structs CC="$(CC)" CXX="$(CXX)" LD="$(LD)" CFLAGS="-Os -fomit-frame-pointer -fstrict-aliasing -ffast-math -fno-exceptions"; \
 	$(MAKE) install-exec-recursive; $(MAKE) -C include install-data-am
 
 PREFIX = /usr/local

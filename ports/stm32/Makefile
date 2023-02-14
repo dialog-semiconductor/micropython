@@ -164,7 +164,7 @@ LDFLAGS += -L"$(shell dirname $(LIBSTDCPP_FILE_NAME))"
 endif
 
 # Options for mpy-cross
-MPY_CROSS_FLAGS += -march=armv7m
+MPY_CROSS_FLAGS += -march=$(MPY_CROSS_MCU_ARCH_$(MCU_SERIES))
 
 SHARED_SRC_C += $(addprefix shared/,\
 	libc/string0.c \
@@ -329,7 +329,6 @@ SRC_C += \
 	machine_i2c.c \
 	machine_i2s.c \
 	machine_spi.c \
-	machine_timer.c \
 	machine_uart.c \
 	modmachine.c \
 	modpyb.c \
@@ -363,18 +362,18 @@ ifeq ($(MCU_SERIES),$(filter $(MCU_SERIES),f0 g0 l0))
 CSUPEROPT = -Os # save some code space
 SRC_O += \
 	resethandler_m0.o \
-	shared/runtime/gchelper_m0.o
+	shared/runtime/gchelper_thumb1.o
 else
 ifeq ($(MCU_SERIES),l1)
 CFLAGS += -DUSE_HAL_DRIVER
 SRC_O += \
 	resethandler_m3.o \
-	shared/runtime/gchelper_m3.o
+	shared/runtime/gchelper_thumb2.o
 else
 SRC_O += \
 	system_stm32.o \
 	resethandler.o \
-	shared/runtime/gchelper_m3.o
+	shared/runtime/gchelper_thumb2.o
 endif
 endif
 
@@ -475,7 +474,6 @@ USBDEV_SRC_C += $(addprefix $(USBDEV_DIR)/,\
 	)
 
 ifeq ($(MICROPY_SSL_MBEDTLS),1)
-CFLAGS += -DMBEDTLS_CONFIG_FILE='"mbedtls/mbedtls_config.h"'
 LIB_SRC_C += mbedtls/mbedtls_port.c
 endif
 
@@ -548,7 +546,7 @@ define RUN_DFU
 	$(ECHO) "Writing $(1) to the board"
 	$(if $(filter $(USE_PYDFU),1),\
 	$(Q)$(PYTHON) $(PYDFU) --vid $(BOOTLOADER_DFU_USB_VID) --pid $(BOOTLOADER_DFU_USB_PID) -u $(1),
-	$(Q)$(DFU_UTIL) -a 0 -d $(BOOTLOADER_DFU_USB_VID):$(BOOTLOADER_DFU_USB_PID) -D $(1))
+	$(Q)$(DFU_UTIL) -a 0 -d $(BOOTLOADER_DFU_USB_VID):$(BOOTLOADER_DFU_USB_PID) -D $(1) -s :leave)
 endef
 
 define RUN_STLINK

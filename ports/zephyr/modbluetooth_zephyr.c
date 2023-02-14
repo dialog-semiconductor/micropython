@@ -33,6 +33,8 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include "extmod/modbluetooth.h"
 
 #define DEBUG_printf(...) // printk("BLE: " __VA_ARGS__)
@@ -279,19 +281,116 @@ int mp_bluetooth_gatts_register_service_begin(bool append) {
         // Don't support append yet (modbluetooth.c doesn't support it yet anyway).
         return MP_EOPNOTSUPP;
     }
-
     // Reset the gatt characteristic value db.
     mp_bluetooth_gatts_db_reset(MP_STATE_PORT(bluetooth_zephyr_root_pointers)->gatts_db);
 
-    return MP_EOPNOTSUPP;
+    return 0;
 }
 
 int mp_bluetooth_gatts_register_service_end(void) {
-    return MP_EOPNOTSUPP;
+    return 0;
+}
+// struct bt_gatt_service {
+// 	/** Service Attributes */
+// 	struct bt_gatt_attr *attrs;
+// 	/** Service Attribute count */
+// 	size_t attr_count;
+
+// 	sys_snode_t node;
+// };
+// struct bt_gatt_attr {
+// 	/** Attribute UUID */
+// 	const struct bt_uuid *uuid;
+// 	bt_gatt_attr_read_func_t read;
+// 	/** Attribute write callback */
+// 	bt_gatt_attr_write_func_t write;
+// 	/** Attribute user data */
+// 	void *user_data;
+// 	/** Attribute handle */
+// 	uint16_t handle;
+// 	/** @brief Attribute permissions.
+// 	 *
+// 	 * Will be 0 if returned from bt_gatt_discover().
+// 	 */
+// 	uint16_t perm;
+// };
+
+// Note: modbluetooth UUIDs store their data in LE.
+STATIC void *create_zephyr_uuid(const mp_obj_bluetooth_uuid_t *uuid) {
+    if (uuid->type == MP_BLUETOOTH_UUID_TYPE_16) {
+        struct bt_uuid_16 *result = m_new(struct bt_uuid_16, 1);
+        result->uuid.type = BT_UUID_TYPE_16;
+        result->val = (uuid->data[1] << 8) | uuid->data[0];
+        return (void *)result;
+    } else if (uuid->type == MP_BLUETOOTH_UUID_TYPE_32) {
+        struct bt_uuid_32 *result = m_new(struct bt_uuid_32, 1);
+        result->uuid.type = BT_UUID_TYPE_32;
+        result->val = (uuid->data[1] << 24) | (uuid->data[1] << 16) | (uuid->data[1] << 8) | uuid->data[0];
+        return (void *)result;
+    } else if (uuid->type == MP_BLUETOOTH_UUID_TYPE_128) {
+        struct bt_uuid_128 *result = m_new(struct bt_uuid_128, 1);
+        result->uuid.type = BT_UUID_TYPE_128;
+        memcpy(result->val, uuid->data, 16);
+        return (void *)result;
+    } else {
+        return NULL;
+    }
 }
 
 int mp_bluetooth_gatts_register_service(mp_obj_bluetooth_uuid_t *service_uuid, mp_obj_bluetooth_uuid_t **characteristic_uuids, uint16_t *characteristic_flags, mp_obj_bluetooth_uuid_t **descriptor_uuids, uint16_t *descriptor_flags, uint8_t *num_descriptors, uint16_t *handles, size_t num_characteristics) {
-    return MP_EOPNOTSUPP;
+    struct bt_gatt_service svc = {0};
+    svc.attr_count = num_characteristics;
+    svc.attrs = m_new(struct bt_gatt_attr, num_characteristics + 1);
+    size_t handle_index = 0;
+    size_t descriptor_index = 0;
+
+    for (size_t i = 0; i < num_characteristics; ++i) {
+        svc.attrs[i].uuid = create_zephyr_uuid(characteristic_uuids[i]);
+        //svc.attrs[i].read = characteristic_access_cb;
+        //svc.attrs[i].write = characteristic_access_cb;
+        svc.attrs[i].user_data = NULL;
+        // NimBLE flags match the MP_BLUETOOTH_CHARACTERISTIC_FLAG_ ones exactly (including the security/privacy options).
+        svc.attrs[i].perm = characteristic_flags[i];
+        //characteristics[i].min_key_size = 0;
+        svc.attrs[i].handle = handles[handle_index];
+        ++handle_index;
+
+        // if (num_descriptors[i] == 0) {
+        //     characteristics[i].descriptors = NULL;
+        // } else {
+        //     struct ble_gatt_dsc_def *descriptors = m_new(struct ble_gatt_dsc_def, num_descriptors[i] + 1);
+
+        //     for (size_t j = 0; j < num_descriptors[i]; ++j) {
+        //         descriptors[j].uuid = create_nimble_uuid(descriptor_uuids[descriptor_index], NULL);
+        //         descriptors[j].access_cb = characteristic_access_cb;
+        //         // NimBLE doesn't support security/privacy options on descriptors.
+        //         descriptors[j].att_flags = (uint8_t)descriptor_flags[descriptor_index];
+        //         descriptors[j].min_key_size = 0;
+        //         // Unlike characteristic, Nimble doesn't provide an automatic way to remember the handle, so use the arg.
+        //         descriptors[j].arg = &handles[handle_index];
+        //         ++descriptor_index;
+        //         ++handle_index;
+        //     }
+        //     descriptors[num_descriptors[i]].uuid = NULL; // no more descriptors
+
+        //     characteristics[i].descriptors = descriptors;
+        // }
+    }
+    // characteristics[num_characteristics].uuid = NULL; // no more characteristics
+
+    // struct ble_gatt_svc_def *service = m_new(struct ble_gatt_svc_def, 2);
+    // service[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
+    // service[0].uuid = create_nimble_uuid(service_uuid, NULL);
+    // service[0].includes = NULL;
+    // service[0].characteristics = characteristics;
+    // service[1].type = 0; // no more services
+
+    int ret = bt_gatt_service_register(&svc);
+    if (ret != 0) {
+        return bt_err_to_errno(ret);
+    }
+
+    return 0;
 }
 
 int mp_bluetooth_gap_disconnect(uint16_t conn_handle) {

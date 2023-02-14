@@ -203,7 +203,7 @@ size_t mp_bluetooth_gap_get_device_name(const uint8_t **buf) {
 }
 
 int mp_bluetooth_gap_set_device_name(const uint8_t *buf, size_t len) {
-    char tmp_buf[CONFIG_BT_DEVICE_NAME_MAX + 1];
+    char tmp_buf[26];
     if (len + 1 > sizeof(tmp_buf)) {
         return MP_EINVAL;
     }

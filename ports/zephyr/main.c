@@ -140,6 +140,7 @@ soft_reset:
     gc_init(heap, heap + sizeof(heap));
     #endif
     mp_init();
+    mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash_slash_lib));
 
     #ifdef CONFIG_USB_DEVICE_STACK
     usb_enable(NULL);

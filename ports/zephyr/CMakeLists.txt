@@ -34,6 +34,10 @@ set(MICROPY_TARGET      micropython)
 include(${MICROPY_DIR}/py/py.cmake)
 include(${MICROPY_DIR}/extmod/extmod.cmake)
 
+set(MICROPY_QSTRDEFS_PORT
+    ${PROJECT_SOURCE_DIR}/qstrdefsport.h
+)
+
 set(MICROPY_SOURCE_PORT
     main.c
     help.c

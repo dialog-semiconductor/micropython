@@ -33,8 +33,9 @@
 
 // Usually passed from Makefile
 #ifndef MICROPY_HEAP_SIZE
-#define MICROPY_HEAP_SIZE (16 * 1024)
+#define MICROPY_HEAP_SIZE (64 * 1024)
 #endif
+#define MICROPY_PY_FRAMEBUF         (1)
 
 #define MICROPY_ENABLE_SOURCE_LINE  (1)
 #define MICROPY_STACK_CHECK         (1)
@@ -50,7 +51,7 @@
 #define MICROPY_PY_BUILTINS_ENUMERATE (0)
 #define MICROPY_PY_BUILTINS_FILTER  (0)
 #define MICROPY_PY_BUILTINS_MIN_MAX (0)
-#define MICROPY_PY_BUILTINS_PROPERTY (0)
+#define MICROPY_PY_BUILTINS_PROPERTY (1)
 #define MICROPY_PY_BUILTINS_RANGE_ATTRS (0)
 #define MICROPY_PY_BUILTINS_REVERSED (0)
 #define MICROPY_PY_BUILTINS_SET     (0)
@@ -58,7 +59,7 @@
 #define MICROPY_PY_BUILTINS_MEMORYVIEW (1)
 #define MICROPY_PY_BUILTINS_HELP    (1)
 #define MICROPY_PY_BUILTINS_HELP_TEXT zephyr_help_text
-#define MICROPY_PY_ARRAY            (0)
+#define MICROPY_PY_ARRAY            (1)
 #define MICROPY_PY_COLLECTIONS      (0)
 #define MICROPY_PY_CMATH            (0)
 #define MICROPY_PY_IO               (0)
@@ -90,7 +91,7 @@
 #define MICROPY_PY_UTIME_MP_HAL     (1)
 #define MICROPY_PY_ZEPHYR           (1)
 #define MICROPY_PY_ZSENSOR          (1)
-#define MICROPY_PY_SYS_MODULES      (0)
+#define MICROPY_PY_SYS_MODULES      (1)
 #define MICROPY_LONGINT_IMPL (MICROPY_LONGINT_IMPL_LONGLONG)
 #define MICROPY_FLOAT_IMPL (MICROPY_FLOAT_IMPL_FLOAT)
 #define MICROPY_PY_BUILTINS_COMPLEX (0)
@@ -113,7 +114,11 @@
 void mp_hal_signal_event(void);
 #define MICROPY_SCHED_HOOK_SCHEDULED mp_hal_signal_event()
 
+#define MICROPY_PY_SYS_PATH_ARGV_DEFAULTS (1)
 #define MICROPY_PY_SYS_PLATFORM "zephyr"
+#define MICROPY_PY_SYS_PATH_DEFAULT "/lib"
+
+
 
 #ifdef CONFIG_BOARD
 #define MICROPY_HW_BOARD_NAME "zephyr-" CONFIG_BOARD
@@ -141,3 +146,5 @@ typedef long mp_off_t;
 
 #define MICROPY_BEGIN_ATOMIC_SECTION irq_lock
 #define MICROPY_END_ATOMIC_SECTION irq_unlock
+
+

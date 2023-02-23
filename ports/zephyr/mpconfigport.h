@@ -60,6 +60,7 @@
 #define MICROPY_PY_BUILTINS_HELP    (1)
 #define MICROPY_PY_BUILTINS_HELP_TEXT zephyr_help_text
 #define MICROPY_PY_ARRAY            (1)
+#define MICROPY_PY_ARRAY_SLICE_ASSIGN (1)
 #define MICROPY_PY_COLLECTIONS      (1)
 #define MICROPY_PY_CMATH            (1)
 #define MICROPY_PY_IO               (0)
@@ -90,6 +91,8 @@
 #define MICROPY_PY_UTIME            (1)
 #define MICROPY_PY_UTIME_MP_HAL     (1)
 #define MICROPY_PY_ZEPHYR           (1)
+#define MICROPY_PY_URANDOM          (1)
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
 #define MICROPY_PY_ZSENSOR          (1)
 #define MICROPY_PY_SYS_MODULES      (1)
 #define MICROPY_LONGINT_IMPL (MICROPY_LONGINT_IMPL_LONGLONG)
@@ -107,9 +110,11 @@
 #define MICROPY_FATFS_NORTC            (1)
 
 // Saving extra crumbs to make sure binary fits in 128K
-#define MICROPY_COMP_CONST_FOLDING  (0)
-#define MICROPY_COMP_CONST (0)
-#define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (0)
+#define MICROPY_COMP_CONST_FOLDING  (1)
+#define MICROPY_COMP_CONST (1)
+#define MICROPY_COMP_DOUBLE_TUPLE_ASSIGN (1)
+#define MICROPY_COMP_CONST_LITERAL (1)
+#define MICROPY_COMP_CONST_TUPLE (1)
 
 void mp_hal_signal_event(void);
 #define MICROPY_SCHED_HOOK_SCHEDULED mp_hal_signal_event()

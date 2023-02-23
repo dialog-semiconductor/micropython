@@ -338,29 +338,41 @@ STATIC void *create_zephyr_uuid(const mp_obj_bluetooth_uuid_t *uuid) {
 }
 
 int mp_bluetooth_gatts_register_service(mp_obj_bluetooth_uuid_t *service_uuid, mp_obj_bluetooth_uuid_t **characteristic_uuids, uint16_t *characteristic_flags, mp_obj_bluetooth_uuid_t **descriptor_uuids, uint16_t *descriptor_flags, uint8_t *num_descriptors, uint16_t *handles, size_t num_characteristics) {
-    struct bt_gatt_service svc = {0};
-    svc.attr_count = num_characteristics;
-    svc.attrs = m_new(struct bt_gatt_attr, num_characteristics + 1);
+    struct bt_gatt_service *svc = m_new(struct bt_gatt_service,1);
+    svc->attr_count = (2 * num_characteristics) + 1;
+    svc->attrs = m_new(struct bt_gatt_attr, svc->attr_count);
     size_t handle_index = 0;
     size_t descriptor_index = 0;
+    //printk("\n\n\n\nNum characteristics %d, Num descriptors %d \n", num_characteristics,  *num_descriptors);
 
-    for (size_t i = 0; i < num_characteristics; ++i) {
-        svc.attrs[i].uuid = create_zephyr_uuid(characteristic_uuids[i]);
-        //svc.attrs[i].read = characteristic_access_cb;
-        //svc.attrs[i].write = characteristic_access_cb;
-        svc.attrs[i].user_data = NULL;
+    for (size_t i = 0; i < num_characteristics; i++) {
+        //printk("attr %p handle 0x%04x uuid %s perm 0x%02x i:%d\n", &characteristic_uuids[i], handles[handle_index], bt_uuid_str(create_zephyr_uuid(characteristic_uuids[i])), characteristic_flags[i], i);
+        size_t attr_num = 1 + 2 * i;
+        svc->attrs[attr_num].uuid = (struct bt_uuid*) m_new(struct bt_uuid_16, 1);
+        ((struct bt_uuid_16*)svc->attrs[attr_num].uuid)->uuid.type = BT_UUID_TYPE_16;
+        ((struct bt_uuid_16*)svc->attrs[attr_num].uuid)->val = 0x2803;
+        svc->attrs[attr_num].read = bt_gatt_attr_read_chrc;
+        svc->attrs[attr_num].write = NULL;
+        svc->attrs[attr_num].handle = 0;
+        svc->attrs[attr_num].user_data = m_new(struct bt_gatt_chrc, 1);
+        svc->attrs[attr_num].perm = BT_GATT_PERM_READ;
+        ((struct bt_gatt_chrc*)svc->attrs[attr_num].user_data)->uuid = create_zephyr_uuid(characteristic_uuids[i]);
+        ((struct bt_gatt_chrc*)svc->attrs[attr_num].user_data)->value_handle = handles[handle_index];
+        ((struct bt_gatt_chrc*)svc->attrs[attr_num].user_data)->properties = characteristic_flags[i];
         // NimBLE flags match the MP_BLUETOOTH_CHARACTERISTIC_FLAG_ ones exactly (including the security/privacy options).
-        svc.attrs[i].perm = characteristic_flags[i];
+        svc->attrs[attr_num+1].uuid = create_zephyr_uuid(characteristic_uuids[i]);
+        //svc->attrs[attr_num+1].read = characteristic_access_cb;
+        //svc->attrs[attr_num+1].write = characteristic_access_cb;
+        svc->attrs[attr_num+1].perm = characteristic_flags[i];
         //characteristics[i].min_key_size = 0;
-        svc.attrs[i].handle = handles[handle_index];
-        ++handle_index;
+        svc->attrs[attr_num+1].handle = 0;//handles[handle_index];
+        handle_index++;
 
-        // if (num_descriptors[i] == 0) {
-        //     characteristics[i].descriptors = NULL;
-        // } else {
+        if (num_descriptors[i] != 0) {
         //     struct ble_gatt_dsc_def *descriptors = m_new(struct ble_gatt_dsc_def, num_descriptors[i] + 1);
 
-        //     for (size_t j = 0; j < num_descriptors[i]; ++j) {
+            for (size_t j = 0; j < num_descriptors[i]; j++) {
+                   //printk("desc %p handle 0x%04x uuid %s perm 0x%02x\n", &descriptor_uuids[j], handles[handle_index], bt_uuid_str(create_zephyr_uuid(descriptor_uuids[descriptor_index])), descriptor_flags[descriptor_index]);
         //         descriptors[j].uuid = create_nimble_uuid(descriptor_uuids[descriptor_index], NULL);
         //         descriptors[j].access_cb = characteristic_access_cb;
         //         // NimBLE doesn't support security/privacy options on descriptors.
@@ -368,13 +380,13 @@ int mp_bluetooth_gatts_register_service(mp_obj_bluetooth_uuid_t *service_uuid, m
         //         descriptors[j].min_key_size = 0;
         //         // Unlike characteristic, Nimble doesn't provide an automatic way to remember the handle, so use the arg.
         //         descriptors[j].arg = &handles[handle_index];
-        //         ++descriptor_index;
-        //         ++handle_index;
-        //     }
+                 ++descriptor_index;
+                 ++handle_index;
+            }
         //     descriptors[num_descriptors[i]].uuid = NULL; // no more descriptors
 
         //     characteristics[i].descriptors = descriptors;
-        // }
+        }
     }
     // characteristics[num_characteristics].uuid = NULL; // no more characteristics
 
@@ -384,8 +396,16 @@ int mp_bluetooth_gatts_register_service(mp_obj_bluetooth_uuid_t *service_uuid, m
     // service[0].includes = NULL;
     // service[0].characteristics = characteristics;
     // service[1].type = 0; // no more services
+    svc->attrs[0].uuid = (struct bt_uuid*) m_new(struct bt_uuid_16, 1);
+    ((struct bt_uuid_16*)svc->attrs[0].uuid)->uuid.type = BT_UUID_TYPE_16;
+    ((struct bt_uuid_16*)svc->attrs[0].uuid)->val = 0x2800;
+    svc->attrs[0].read = bt_gatt_attr_read_service;
+    svc->attrs[0].write = NULL;
+    svc->attrs[0].handle = 0;
+    svc->attrs[0].user_data = create_zephyr_uuid(service_uuid);
+    svc->attrs[0].perm = BT_GATT_PERM_READ;
 
-    int ret = bt_gatt_service_register(&svc);
+    int ret = bt_gatt_service_register(svc);
     if (ret != 0) {
         return bt_err_to_errno(ret);
     }
